@@ -13,6 +13,7 @@ const SignIn = () => {
       .post(`http://localhost:4000/user/login`, { email, password })
       .then(response=>{
         console.log(response);
+        localStorage.setItem('token',response.data.token);
         alert("Logged In!");
         history.replace('/chat');
       })
