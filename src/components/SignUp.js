@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useHistory } from "react-router-dom/cjs/react-router-dom";
 
 const SignUp = () => {
+  const history=useHistory();
   const [userDetails, setUserDetails] = useState({});
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,6 +29,7 @@ const SignUp = () => {
           .then((response) => {
             console.log(response);
             alert(response.data.message);
+            history.replace('/login')
           })
           .catch((e) => {
             document.body.innerHTML += `<div style="color:red">${e.response.data.error}</div>`;

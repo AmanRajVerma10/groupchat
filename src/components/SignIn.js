@@ -1,7 +1,9 @@
 import { useRef } from "react";
 import axios from "axios";
+import { useHistory } from "react-router-dom/cjs/react-router-dom";
 
 const SignIn = () => {
+  const history= useHistory();
   const emailRef = useRef("");
   const passwordRef = useRef("");
   const loginHandler = () => {
@@ -12,9 +14,11 @@ const SignIn = () => {
       .then(response=>{
         console.log(response);
         alert("Logged In!");
+        history.replace('/chat');
       })
       .catch((e) => {
         console.log(e);
+        document.body.innerHTML += `<div style="color:red">${e.response.data.message}</div>`;
       });
   };
   return (
