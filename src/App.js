@@ -5,12 +5,13 @@ import SignUp from './components/SignUp';
 import { Switch, Route } from 'react-router-dom';
 
 function App() {
+  const token=localStorage.getItem('token');
   return (
     <Layout>
       <Switch>
         <Route path="/login" exact><SignIn></SignIn></Route>
         <Route path="/sign-up" exact><SignUp></SignUp></Route>
-        <Route path="/chat" exact><ChatBox></ChatBox></Route>
+        {token && <Route path="/chat" exact><ChatBox></ChatBox></Route>}
       </Switch>
     </Layout>
   );
