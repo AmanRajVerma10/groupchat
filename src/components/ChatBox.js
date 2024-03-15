@@ -22,25 +22,14 @@ function ChatBox() {
   const [inputText, setInputText] = useState("");
   const decodedToken = parseJwt(localStorage.getItem("token"));
 
-  useEffect(() => {
-    axios
-      .get(`http://localhost:4000/user/getmessages`)
-      .then((response) => {
-        const newMessages = response.data.message.map((msg) => msg.text);
-        setMessages((prevMessages) => [...prevMessages, ...newMessages]);
-  })
-      .catch((e) => console.log(e));
-  }, []);
-
-  const handleInputChange = (event) => {
-    setInputText(event.target.value);
-  };
-
   const handleSubmit = (event) => {
     event.preventDefault();
     if (inputText.trim() !== "") {
-      setMessages([...messages, inputText]);
+      const messageToSend = `${decodedToken.name}: ${inputText}`;
+      setMessages([...messages, messageToSend]); 
+
       setInputText("");
+
       axios
         .post(`http://localhost:4000/user/sendmessage`, {
           id: decodedToken.userId,
@@ -55,6 +44,32 @@ function ChatBox() {
     }
   };
 
+  useEffect(() => {
+    axios
+      .all([
+        axios.get(`http://localhost:4000/user/allusers`),
+        axios.get(`http://localhost:4000/user/getmessages`),
+      ])
+      .then(
+        axios.spread((usersRes, messagesRes) => {
+          const userObj = {};
+          usersRes.data.users.forEach((user) => {
+            userObj[user.id] = user.name;
+          });
+
+          const newMessages = messagesRes.data.message.map(
+            (msg) => `${userObj[msg.userId]}: ${msg.text}`
+          );
+          setMessages((prevMessages) => [...prevMessages, ...newMessages]);
+        })
+      )
+      .catch((e) => console.log(e));
+  }, []);
+
+  const handleInputChange = (event) => {
+    setInputText(event.target.value);
+  };
+
   return (
     <div>
       <h2>Chat Box</h2>
@@ -67,9 +82,7 @@ function ChatBox() {
         }}
       >
         {messages.map((message, index) => (
-          <div key={index}>
-            {decodedToken.name}: {message}
-          </div>
+          <div key={index}>{message}</div>
         ))}
       </div>
       <form onSubmit={handleSubmit} style={{ marginTop: "10px" }}>
