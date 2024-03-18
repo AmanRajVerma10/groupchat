@@ -24,12 +24,70 @@ function GroupComponent(props) {
   const [groups, setGroups] = useState([]);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
-  const [isAdmin, setIsAdmin]=useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const decodedToken = parseJwt(localStorage.getItem("token"));
 
   useEffect(() => {
-    setGroupId(id); 
+    setGroupId(id);
   }, [id]);
+
+  useEffect(() => {
+    if (groupId) {
+      axios
+        .all([
+          axios.get(`http://localhost:4000/user/allusers?groupid=${groupId}`),
+          axios.get(
+            `http://localhost:4000/user/getmessages?groupid=${groupId}`
+          ),
+        ])
+        .then(
+          axios.spread((usersRes, messagesRes) => {
+            const userObj = {};
+            usersRes.data.users.forEach((user) => {
+              userObj[user.id] = user.name;
+            });
+
+            const newMessages = messagesRes.data.message.map(
+              (msg) => `${userObj[msg.userId]}: ${msg.text}`
+            );
+            setMessages((prevMessages) => {
+              const uniqueMessages = new Set([
+                ...prevMessages,
+                ...newMessages,
+              ]);
+              return Array.from(uniqueMessages);
+            });
+          })
+        )
+        .catch((e) => console.log(e));
+    }
+  }, [groupId]);
+
+  useEffect(() => {
+    if (groupId) {
+      axios
+        .post(`http://localhost:4000/user/isadmin`, {
+          groupId,userId:decodedToken.userId
+        })
+        .then((res) => {
+          setIsAdmin(res.data.message);
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    }
+  }, [groupId, decodedToken.userId]);
+
+  useEffect(() => {
+    axios
+      .get(`http://localhost:4000/user/getgroups?userid=${decodedToken.userId}`)
+      .then((res) => {
+        setGroups([...res.data.groups]);
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }, [decodedToken.userId]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -53,109 +111,71 @@ function GroupComponent(props) {
     }
   };
 
-  useEffect(() => {
-    if (groupId) {
-      setMessages([]);
-      axios.post(`http://localhost:4000/user/isadmin`,{
-        groupId,
-        userId:decodedToken.userId
-      }).then(res=>{setIsAdmin(res.data.message)}).catch(e=>{console.log(e)})
+  const inviteHandler = () => {
+    const userId = prompt("Enter the ID of the user you wish to add:");
+    if (userId) {
       axios
-        .all([
-          axios.get(`http://localhost:4000/user/allusers?groupid=${groupId}`),
-          axios.get(
-            `http://localhost:4000/user/getmessages?groupid=${groupId}`
-          ),
-        ])
-        .then(
-          axios.spread((usersRes, messagesRes) => {
-            const userObj = {};
-            usersRes.data.users.forEach((user) => {
-              userObj[user.id] = user.name;
-            });
-
-            const newMessages = messagesRes.data.message.map(
-              (msg) => `${userObj[msg.userId]}: ${msg.text}`
-            );
-            setMessages((prevMessages) => {
-              const uniqueMessages = new Set([...prevMessages, ...newMessages]);
-              return Array.from(uniqueMessages);
-            });
-          })
-        )
-        .catch((e) => console.log(e));
+        .post(`http://localhost:4000/user/invite`, {
+          groupId,
+          userId,
+        })
+        .then((res) => {
+          alert(`User with ID ${userId} added to the group!`);
+        })
+        .catch((e) => {
+          console.log(e);
+        });
     }
-  }, [groupId,decodedToken.userId]);
+  };
 
-  useEffect(() => {
-    axios
-      .get(`http://localhost:4000/user/getgroups?userid=${decodedToken.userId}`)
-      .then((res) => {
-        console.log(res);
-        let grp = [];
-        grp = [...res.data.groups];
-        console.log(grp);
-        setGroups(grp);
-      })
-      .catch((e) => {
-        console.log(e);
-      });
-  }, [decodedToken.userId]);
+  const removeHandler = () => {
+    const userId = prompt("Enter the ID of the user you wish to remove:");
+    if (userId) {
+      axios
+        .post(`http://localhost:4000/user/remove`, {
+          groupId,
+          userId,
+        })
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    }
+  };
 
-  function inviteHandler() {
-    const userId = prompt("Enter id of the user you wish to add!");
-    axios
-      .post(`http://localhost:4000/user/invite`, {
-        groupId,
-        userId,
-      })
-      .then((res) => {
-        alert(`User with id ${userId} added!`);
-        console.log(res);
-      })
-      .catch((e) => {
-        console.log(e);
-      });
-  }
-
-  function removeHandler() {
-    const userId = prompt("id of the user, you wish to remove!");
-    axios
-      .post(`http://localhost:4000/user/remove`, {
-        userId,
-        groupId,
-      })
-      .then((res) => {
-        console.log(res);
-      })
-      .catch((e) => {
-        console.log(e);
-      });
-  }
-
-  function adminHandler() {
-    const userId = prompt("id of the user you want to make admin");
-    axios
-      .post(`http://localhost:4000/user/makeadmin`, {
-        userId,
-        groupId,
-      })
-      .then((res) => {
-        console.log(res);
-      })
-      .catch((e) => {
-        console.log(e);
-      });
-  }
+  const adminHandler = () => {
+    const userId = prompt("Enter the ID of the user you want to make admin:");
+    if (userId) {
+      axios
+        .post(`http://localhost:4000/user/makeadmin`, {
+          groupId,
+          userId,
+        })
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    }
+  };
 
   return (
     <div>
       <h2>Chat Box</h2>
-      {isAdmin && <h3>Admin Features</h3>}
-     {isAdmin && <button onClick={inviteHandler}>Add others to this group?</button>}
-      <br></br>
-      {isAdmin && <button onClick={removeHandler}>Remove someone from this group?</button>}
-      {isAdmin && <button onClick={adminHandler}>Make another user admin?</button>}
+      {isAdmin && (
+        <>
+          <h3>Admin Features</h3>
+          <button onClick={inviteHandler}>Add others to this group?</button>
+          <br />
+          <button onClick={removeHandler}>
+            Remove someone from this group?
+          </button>
+          <button onClick={adminHandler}>Make another user admin?</button>
+        </>
+      )}
       <ul>
         {groups.map((group) => (
           <li key={group.id}>
