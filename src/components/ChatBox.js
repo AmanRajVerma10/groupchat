@@ -55,7 +55,7 @@ function ChatBox() {
 
   return (
     <div>
-      <h2>Chat Box</h2>
+      <h2>{`Welcome to your ChatBox, ${decodedToken.name}!`}</h2>
       <button onClick={groupCreate}>Create a group?</button>
       <ul>
         {groups.map((group) => (
