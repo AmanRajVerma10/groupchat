@@ -33,6 +33,7 @@ function GroupComponent(props) {
 
   useEffect(() => {
     if (groupId) {
+      setMessages([]);
       axios
         .all([
           axios.get(`http://localhost:4000/user/allusers?groupid=${groupId}`),
@@ -138,6 +139,7 @@ function GroupComponent(props) {
         })
         .then((res) => {
           console.log(res);
+          alert(`User with ID ${userId} removed from the group!`)
         })
         .catch((e) => {
           console.log(e);
@@ -155,6 +157,7 @@ function GroupComponent(props) {
         })
         .then((res) => {
           console.log(res);
+          alert(`User with ID ${userId} is now an admin of this group!`)
         })
         .catch((e) => {
           console.log(e);
